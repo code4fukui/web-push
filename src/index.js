@@ -1,14 +1,12 @@
-'use strict';
-
-const vapidHelper = require('./vapid-helper.js');
-const encryptionHelper = require('./encryption-helper.js');
-const WebPushLib = require('./web-push-lib.js');
-const WebPushError = require('./web-push-error.js');
-const WebPushConstants = require('./web-push-constants.js');
+import vapidHelper from './vapid-helper.js';
+import encryptionHelper from './encryption-helper.js';
+import WebPushLib from './web-push-lib.js';
+import WebPushError from './web-push-error.js';
+import WebPushConstants from './web-push-constants.js';
 
 const webPush = new WebPushLib();
 
-module.exports = {
+export default {
   WebPushError: WebPushError,
   supportedContentEncodings: WebPushConstants.supportedContentEncodings,
   encrypt: encryptionHelper.encrypt,

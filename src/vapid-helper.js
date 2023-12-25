@@ -1,12 +1,13 @@
-'use strict';
+//const crypto = require('crypto');
+import * as crypto from "https://code4fukui.github.io/encrypted-content-encoding/denojs/crypto_node.js";
+//import asn1 from 'node:asn1';
+import * as asn1 from "https://code4fukui.github.io/ASN1/lib/asn1.js";
+//import jws from 'node:jws';
+import { URL } from 'node:url';
+import { Buffer } from "https://taisukef.github.io/buffer/Buffer.js";
 
-const crypto = require('crypto');
-const asn1 = require('asn1.js');
-const jws = require('jws');
-const { URL } = require('url');
-
-const WebPushConstants = require('./web-push-constants.js');
-const urlBase64Helper = require('./urlsafe-base64-helper');
+import WebPushConstants from './web-push-constants.js';
+import urlBase64Helper from './urlsafe-base64-helper.js';
 
 /**
  * DEFAULT_EXPIRATION is set to seconds in 12 hours
@@ -105,8 +106,9 @@ function validatePublicKey(publicKey) {
     throw new Error('Vapid public key must be a URL safe Base 64 (without "=")');
   }
 
+  console.log(publicKey, publicKey.length)
   publicKey = Buffer.from(publicKey, 'base64url');
-
+  console.log(publicKey, publicKey.length)
   if (publicKey.length !== 65) {
     throw new Error('Vapid public key should be 65 bytes long when decoded.');
   }
@@ -244,7 +246,7 @@ function getVapidHeaders(audience, subject, publicKey, privateKey, contentEncodi
   throw new Error('Unsupported encoding type specified.');
 }
 
-module.exports = {
+export default {
   generateVAPIDKeys: generateVAPIDKeys,
   getFutureExpirationTimestamp: getFutureExpirationTimestamp,
   getVapidHeaders: getVapidHeaders,

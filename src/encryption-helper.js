@@ -1,7 +1,8 @@
-'use strict';
-
-const crypto = require('crypto');
-const ece = require('http_ece');
+//import { crypto } from "crypto";
+import * as crypto from "https://code4fukui.github.io/encrypted-content-encoding/denojs/crypto_node.js";
+//import { ece } from 'http_ece';
+import ece from "https://code4fukui.github.io/encrypted-content-encoding/denojs/ece.js";
+import { Buffer } from "https://taisukef.github.io/buffer/Buffer.js";
 
 const encrypt = function(userPublicKey, userAuth, payload, contentEncoding) {
   if (!userPublicKey) {
@@ -57,6 +58,6 @@ const encrypt = function(userPublicKey, userAuth, payload, contentEncoding) {
   };
 };
 
-module.exports = {
+export default {
   encrypt: encrypt
 };

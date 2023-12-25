@@ -1,13 +1,11 @@
-'use strict';
+import url from 'node:url';
+import https from 'node:https';
 
-const url = require('url');
-const https = require('https');
-
-const WebPushError = require('./web-push-error.js');
-const vapidHelper = require('./vapid-helper.js');
-const encryptionHelper = require('./encryption-helper.js');
-const webPushConstants = require('./web-push-constants.js');
-const urlBase64Helper = require('./urlsafe-base64-helper');
+import WebPushError from './web-push-error.js';
+import vapidHelper from './vapid-helper.js';
+import encryptionHelper from './encryption-helper.js';
+import webPushConstants from './web-push-constants.js';
+import urlBase64Helper from './urlsafe-base64-helper.js';
 
 // Default TTL is four weeks.
 const DEFAULT_TTL = 2419200;
@@ -362,8 +360,11 @@ WebPushLib.prototype.sendNotification = function(subscription, payload, options)
       }
 
       if (requestDetails.proxy) {
+        /*
         const { HttpsProxyAgent } = require('https-proxy-agent'); // eslint-disable-line global-require
         httpsOptions.agent = new HttpsProxyAgent(requestDetails.proxy);
+        */
+        throw new Error("proxy is not supported yet");
       }
 
       const pushRequest = https.request(httpsOptions, function(pushResponse) {
@@ -410,4 +411,4 @@ WebPushLib.prototype.sendNotification = function(subscription, payload, options)
     });
   };
 
-module.exports = WebPushLib;
+export default WebPushLib;

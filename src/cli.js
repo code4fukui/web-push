@@ -1,9 +1,7 @@
 #! /usr/bin/env node
 /* eslint consistent-return:0 */
 
-'use strict';
-
-const webPush = require('../src/index.js');
+import { webPush } from '../src/index.js';
 
 const printUsageDetails = () => {
   const actions = [
