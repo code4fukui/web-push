@@ -1,10 +1,12 @@
 //const crypto = require('crypto');
-import * as crypto from "https://code4fukui.github.io/encrypted-content-encoding/denojs/crypto_node.js";
+//import * as crypto from "https://code4fukui.github.io/encrypted-content-encoding/denojs/crypto_node.js";
 //import asn1 from 'node:asn1';
 import * as asn1 from "https://code4fukui.github.io/ASN1/lib/asn1.js";
 //import jws from 'node:jws';
+import * as JWS from "./JWS_prime256v1.js";
 import { URL } from 'node:url';
 import { Buffer } from "https://taisukef.github.io/buffer/Buffer.js";
+import { toUint8Array } from "./toUint8Array.js";
 
 import WebPushConstants from './web-push-constants.js';
 import urlBase64Helper from './urlsafe-base64-helper.js';
@@ -39,6 +41,11 @@ function toPEM(key) {
 }
 
 function generateVAPIDKeys() {
+  return jws.genKeys();
+};
+
+/*
+function generateVAPIDKeys() {
   const curve = crypto.createECDH('prime256v1');
   curve.generateKeys();
 
@@ -65,6 +72,7 @@ function generateVAPIDKeys() {
     privateKey: privateKeyBuffer.toString('base64url')
   };
 }
+*/
 
 function validateSubject(subject) {
   if (!subject) {
@@ -206,7 +214,7 @@ function getVapidHeaders(audience, subject, publicKey, privateKey, contentEncodi
   validatePublicKey(publicKey);
   validatePrivateKey(privateKey);
 
-  privateKey = Buffer.from(privateKey, 'base64url');
+  //privateKey = Buffer.from(privateKey, 'base64url');
 
   if (expiration) {
     validateExpiration(expiration);
@@ -225,11 +233,7 @@ function getVapidHeaders(audience, subject, publicKey, privateKey, contentEncodi
     sub: subject
   };
 
-  const jwt = jws.sign({
-    header: header,
-    payload: jwtPayload,
-    privateKey: toPEM(privateKey)
-  });
+  const jwt = JWS.sign({ header, payload: jwtPayload, privateKey });
 
   if (contentEncoding === WebPushConstants.supportedContentEncodings.AES_128_GCM) {
     return {

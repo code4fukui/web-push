@@ -1,7 +1,9 @@
-const crypto = require('crypto');
-const asn1 = require('asn1.js');
-const jws = require('jws');
-const fs = require("fs");
+//import { JWS } from "https://github.com/code4fukui/JWS/blob/main/JWS.js";
+import * as crypto from "https://code4fukui.github.io/encrypted-content-encoding/denojs/crypto_node.js"
+import { Buffer } from "https://taisukef.github.io/buffer/Buffer.js";
+import { toUint8Array } from "./toUint8Array.js";
+import * as JWS from "./JWS.js";
+import fs from "node:fs";
 
 /*
 import jws from 'jws';
@@ -9,23 +11,25 @@ import crypto from 'crypto';
 import asn1 from 'asn1.js';
 */
 
-const ECPrivateKeyASN = asn1.define('ECPrivateKey', function() {
-  this.seq().obj(
-    this.key('version').int(),
-    this.key('privateKey').octstr(),
-    this.key('parameters').explicit(0).objid()
-      .optional(),
-    this.key('publicKey').explicit(1).bitstr()
-      .optional()
-  );
-});
+/*
+eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJhdWQiOiJodHRwczovL3dlYi5wdXNoLmFwcGxlLmNvbSIsImV4cCI6MTcwMzUyNTU5OCwic3ViIjoibWFpbHRvOmZ1a3Vub0BqaWcuanAifQ.iJK1bOikO9-MAcPHb-eRILFzbYdSs4Zc2KEOlDEN7sdj0u0Ha1T62w6XHYuKCYFP1cSpdQXa51hh7xgUyP3Snw
+
+eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJhdWQiOiJodHRwczovL3dlYi5wdXNoLmFwcGxlLmNvbSIsImV4cCI6MTcwMzUyNTU5OCwic3ViIjoibWFpbHRvOmZ1a3Vub0BqaWcuanAifQ.NYCgIo2_xK7AMHt8j1sI2FcAEKx5H7P2J9eC9284SgGqFDBRrNpGSEHcjRzonSJ-omEE9SpC8ti8VME-Ur-y-A  
+*/
+
 
 function generateVAPIDKeys() {
-  const curve = crypto.createECDH('prime256v1');
+  
+  // secp521r1;secp384r1;prime256v1;secp256k1;secp224r1;secp224k1;prime192v1
+  const curve = crypto.createECDH('prime256v1'); // -> 65byte, 32byte
+  //const curve = crypto.createECDH('secp521r1'); // invalid curve
+  //const curve = crypto.createECDH('secp256k1'); // NISP P-256 (RPC4492)? Deno has panicked. // secp256k1 32byte, 32byte? Koblitz曲線 prime256v1とは別物
+  //const curve = crypto.createECDH('secp224r1'); // 57byte, 28byte
   curve.generateKeys();
 
-  let publicKeyBuffer = curve.getPublicKey();
-  let privateKeyBuffer = curve.getPrivateKey();
+  let publicKeyBuffer = curve.getPublicKey(); // 65byte
+  let privateKeyBuffer = curve.getPrivateKey(); // 32byte
+  console.log("pub", toUint8Array(publicKeyBuffer), "pri", toUint8Array(privateKeyBuffer));
 
   // Occassionally the keys will not be padded to the correct lengh resulting
   // in errors, hence this padding.
@@ -39,14 +43,17 @@ function generateVAPIDKeys() {
   if (publicKeyBuffer.length < 65) {
     const padding = Buffer.alloc(65 - publicKeyBuffer.length);
     padding.fill(0);
+    console.log(publicKeyBuffer)
     publicKeyBuffer = Buffer.concat([padding, publicKeyBuffer]);
+    console.log(publicKeyBuffer)
   }
 
   return {
-    publicKey: publicKeyBuffer.toString('base64url'),
-    privateKey: privateKeyBuffer.toString('base64url')
+    publicKey: toUint8Array(publicKeyBuffer),
+    privateKey: toUint8Array(privateKeyBuffer),
   };
 }
+
 
 function getFutureExpirationTimestamp(numSeconds) {
   const futureExp = new Date();
@@ -54,21 +61,12 @@ function getFutureExpirationTimestamp(numSeconds) {
   return Math.floor(futureExp.getTime() / 1000);
 }
 
-function toPEM(key) {
-  return ECPrivateKeyASN.encode({
-    version: 1,
-    privateKey: key,
-    parameters: [1, 2, 840, 10045, 3, 1, 7] // prime256v1
-  }, 'pem', {
-    label: 'EC PRIVATE KEY'
-  });
-};
-
 const getKeys = () => {
   try {
+    throw new Error();
     const keys = JSON.parse(fs.readFileSync("vapidKeys.json", "utf-8"));
-    keys.privateKey = Buffer.from(keys.privateKey, "base64url");
-    keys.publicKey = Buffer.from(keys.publicKey, "base64url");
+    keys.privateKey = toUint8Array(Buffer.from(keys.privateKey, "base64url"));
+    keys.publicKey = toUint8Array(Buffer.from(keys.publicKey, "base64url"));
     return keys;
   } catch (e) {
     const keys = generateVAPIDKeys();
@@ -78,7 +76,7 @@ const getKeys = () => {
 
 const keys = getKeys();
 
-let privateKey = keys.privateKey;
+const privateKey = keys.privateKey;
 
 const header = {
   typ: 'JWT',
@@ -97,15 +95,21 @@ const jwtPayload = {
   sub: subject
 };
 
-privateKey = Buffer.from(privateKey, 'base64url');
+//privateKey = Buffer.from(privateKey, 'base64url');
 
 console.log(header, jwtPayload, privateKey);
+/*
 const jwt = jws.sign({
   header: header,
   payload: jwtPayload,
   privateKey: toPEM(privateKey)
 });
+*/
+const jwt = JWS.sign({ header, payload: jwtPayload, privateKey });
 console.log(jwt);
+
+const res = JWS.verify({ jwt, publicKey: keys.publicKey });
+console.log(res);
 
 /*
   console.log("jwt", header, jwtPayload, privateKey, jwt)

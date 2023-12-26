@@ -1,11 +1,23 @@
 import url from 'node:url';
-import https from 'node:https';
+//import https from 'node:https';
+
+const httprequest = async (opt, body) => {
+  //console.log(opt);
+  //delete opt.headers.TTL;
+  console.log(JSON.stringify(opt.headers, null, 2));
+  console.log(body);
+  const res = await fetch("https://" + opt.hostname + opt.path, { method: opt.method, headers: opt.headers, body });
+  console.log(res);
+  const txt = await res.text();
+  console.log(txt);
+};
 
 import WebPushError from './web-push-error.js';
 import vapidHelper from './vapid-helper.js';
 import encryptionHelper from './encryption-helper.js';
 import webPushConstants from './web-push-constants.js';
 import urlBase64Helper from './urlsafe-base64-helper.js';
+import { toUint8Array } from "./toUint8Array.js";
 
 // Default TTL is four weeks.
 const DEFAULT_TTL = 2419200;
@@ -238,8 +250,7 @@ WebPushLib.prototype.generateRequestDetails = function(subscription, payload, op
     let requestPayload = null;
 
     if (payload) {
-      const encrypted = encryptionHelper
-        .encrypt(subscription.keys.p256dh, subscription.keys.auth, payload, contentEncoding);
+      const encrypted = encryptionHelper.encrypt(subscription.keys.p256dh, subscription.keys.auth, payload, contentEncoding);
 
       requestDetails.headers['Content-Length'] = encrypted.cipherText.length;
       requestDetails.headers['Content-Type'] = 'application/octet-stream';
@@ -340,6 +351,9 @@ WebPushLib.prototype.sendNotification = function(subscription, payload, options)
     } catch (err) {
       return Promise.reject(err);
     }
+    console.log("reqDetail", JSON.stringify(requestDetails, null, 2));
+    console.log("options", JSON.stringify(options, null, 2));
+    //if ("Deno" in window) Deno.exit(); else process.exit();
 
     return new Promise(function(resolve, reject) {
       const httpsOptions = {};
@@ -367,6 +381,10 @@ WebPushLib.prototype.sendNotification = function(subscription, payload, options)
         throw new Error("proxy is not supported yet");
       }
 
+      //console.log(JSON.stringify(httpsOptions, null, 2));
+      httprequest(httpsOptions, toUint8Array(requestDetails.body)).then(r => console.log(r));
+      return;
+
       const pushRequest = https.request(httpsOptions, function(pushResponse) {
         let responseText = '';
 
@@ -376,8 +394,9 @@ WebPushLib.prototype.sendNotification = function(subscription, payload, options)
 
         pushResponse.on('end', function() {
           if (pushResponse.statusCode < 200 || pushResponse.statusCode > 299) {
+            console.log("ERR", responseText),
             reject(new WebPushError(
-              'Received unexpected response code',
+              'Received unexpected response code: ' + pushResponse.statusCode,
               pushResponse.statusCode,
               pushResponse.headers,
               responseText,

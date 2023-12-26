@@ -1,6 +1,7 @@
 //import { crypto } from "crypto";
 import * as crypto from "https://code4fukui.github.io/encrypted-content-encoding/denojs/crypto_node.js";
 //import { ece } from 'http_ece';
+import * as JWS from "./JWS_prime256v1.js";
 import ece from "https://code4fukui.github.io/encrypted-content-encoding/denojs/ece.js";
 import { Buffer } from "https://taisukef.github.io/buffer/Buffer.js";
 
@@ -38,21 +39,40 @@ const encrypt = function(userPublicKey, userAuth, payload, contentEncoding) {
     payload = Buffer.from(payload);
   }
 
-  const localCurve = crypto.createECDH('prime256v1');
-  const localPublicKey = localCurve.generateKeys();
-
+  //const localCurve = crypto.createECDH('prime256v1');
+  //const localPublicKey = localCurve.generateKeys();
+  
+  const localkeys = JWS.genKeys();
+  const localPublicKey = localkeys.publicKey; //Buffer.from(keys.publicKey, "hex");
+  const localPrivateKey = localkeys.privateKey;
+  const localCurve = {
+    computeSecret: (remotePubKey) => {
+      const remotePubKey2 = remotePubKey.toString("base64url");
+      const secret = JWS.computeSecret(localPrivateKey, remotePubKey2);
+      console.log("userPublicKey", userPublicKey);
+      console.log("remotePubKey", remotePubKey);
+      console.log("secret", secret);
+      const res = Buffer.from(secret, "hex");
+      console.log("secret", res);
+      return res;
+    },
+    getPublicKey: () => Buffer.from(localPublicKey, "base64url"),
+  };
+  //Buffer.from(keys.privateKey, "hex");
+  console.log({ localCurve, localPublicKey });
+  
   const salt = crypto.randomBytes(16).toString('base64url');
-
+  console.log("contentEncoding", contentEncoding)
   const cipherText = ece.encrypt(payload, {
     version: contentEncoding,
     dh: userPublicKey,
     privateKey: localCurve,
     salt: salt,
-    authSecret: userAuth
+    authSecret: userAuth,
   });
-
+  
   return {
-    localPublicKey: localPublicKey,
+    localPublicKey: Buffer.from(localPublicKey, "base64url"),
     salt: salt,
     cipherText: cipherText
   };
