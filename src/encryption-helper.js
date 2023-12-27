@@ -49,20 +49,14 @@ const encrypt = function(userPublicKey, userAuth, payload, contentEncoding) {
     computeSecret: (remotePubKey) => {
       const remotePubKey2 = remotePubKey.toString("base64url");
       const secret = JWS.computeSecret(localPrivateKey, remotePubKey2);
-      console.log("userPublicKey", userPublicKey);
-      console.log("remotePubKey", remotePubKey);
-      console.log("secret", secret);
       const res = Buffer.from(secret, "hex");
-      console.log("secret", res);
       return res;
     },
     getPublicKey: () => Buffer.from(localPublicKey, "base64url"),
   };
   //Buffer.from(keys.privateKey, "hex");
-  console.log({ localCurve, localPublicKey });
   
   const salt = crypto.randomBytes(16).toString('base64url');
-  console.log("contentEncoding", contentEncoding)
   const cipherText = ece.encrypt(payload, {
     version: contentEncoding,
     dh: userPublicKey,

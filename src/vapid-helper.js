@@ -3,10 +3,10 @@
 //import asn1 from 'node:asn1';
 import * as asn1 from "https://code4fukui.github.io/ASN1/lib/asn1.js";
 //import jws from 'node:jws';
-import * as JWS from "./JWS_prime256v1.js";
+//import * as JWS from "./JWS_prime256v1.js";
+import * as JWS from "./JWS_crypto_ec.js";
 import { URL } from 'node:url';
 import { Buffer } from "https://taisukef.github.io/buffer/Buffer.js";
-import { toUint8Array } from "./toUint8Array.js";
 
 import WebPushConstants from './web-push-constants.js';
 import urlBase64Helper from './urlsafe-base64-helper.js';
@@ -114,9 +114,7 @@ function validatePublicKey(publicKey) {
     throw new Error('Vapid public key must be a URL safe Base 64 (without "=")');
   }
 
-  console.log(publicKey, publicKey.length)
   publicKey = Buffer.from(publicKey, 'base64url');
-  console.log(publicKey, publicKey.length)
   if (publicKey.length !== 65) {
     throw new Error('Vapid public key should be 65 bytes long when decoded.');
   }
@@ -194,7 +192,7 @@ function validateExpiration(expiration) {
  * @return {Object}                 Returns an Object with the Authorization and
  * 'Crypto-Key' values to be used as headers.
  */
-function getVapidHeaders(audience, subject, publicKey, privateKey, contentEncoding, expiration) {
+async function getVapidHeaders(audience, subject, publicKey, privateKey, contentEncoding, expiration) {
   if (!audience) {
     throw new Error('No audience could be generated for VAPID.');
   }
@@ -233,7 +231,7 @@ function getVapidHeaders(audience, subject, publicKey, privateKey, contentEncodi
     sub: subject
   };
 
-  const jwt = JWS.sign({ header, payload: jwtPayload, privateKey });
+  const jwt = await JWS.sign({ header, payload: jwtPayload, privateKey, publicKey });
 
   if (contentEncoding === WebPushConstants.supportedContentEncodings.AES_128_GCM) {
     return {

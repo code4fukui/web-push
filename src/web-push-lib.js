@@ -1,17 +1,3 @@
-import url from 'node:url';
-//import https from 'node:https';
-
-const httprequest = async (opt, body) => {
-  //console.log(opt);
-  //delete opt.headers.TTL;
-  console.log(JSON.stringify(opt.headers, null, 2));
-  console.log(body);
-  const res = await fetch("https://" + opt.hostname + opt.path, { method: opt.method, headers: opt.headers, body });
-  console.log(res);
-  const txt = await res.text();
-  console.log(txt);
-};
-
 import WebPushError from './web-push-error.js';
 import vapidHelper from './vapid-helper.js';
 import encryptionHelper from './encryption-helper.js';
@@ -26,7 +12,6 @@ let gcmAPIKey = '';
 let vapidDetails;
 
 function WebPushLib() {
-
 }
 
 /**
@@ -92,7 +77,7 @@ WebPushLib.prototype.setVapidDetails = function(subject, publicKey, privateKey) 
    * @return {Object}                       This method returns an Object which
    * contains 'endpoint', 'method', 'headers' and 'payload'.
    */
-WebPushLib.prototype.generateRequestDetails = function(subscription, payload, options) {
+WebPushLib.prototype.generateRequestDetails = async function(subscription, payload, options) {
     if (!subscription || !subscription.endpoint) {
       throw new Error('You must pass in a subscription with at least '
       + 'an endpoint.');
@@ -104,6 +89,9 @@ WebPushLib.prototype.generateRequestDetails = function(subscription, payload, op
       + 'a valid URL.');
     }
 
+    if (typeof payload == "object") {
+      payload = JSON.stringify(payload);
+    }
     if (payload) {
       // Validate the subscription keys
       if (typeof subscription !== 'object' || !subscription.keys
@@ -118,7 +106,8 @@ WebPushLib.prototype.generateRequestDetails = function(subscription, payload, op
     let currentVapidDetails = vapidDetails;
     let timeToLive = DEFAULT_TTL;
     let extraHeaders = {};
-    let contentEncoding = webPushConstants.supportedContentEncodings.AES_128_GCM;
+    //let contentEncoding = webPushConstants.supportedContentEncodings.AES_128_GCM;
+    let contentEncoding = webPushConstants.supportedContentEncodings.AES_GCM; // change default
     let urgency = webPushConstants.supportedUrgency.NORMAL;
     let topic;
     let proxy;
@@ -280,11 +269,10 @@ WebPushLib.prototype.generateRequestDetails = function(subscription, payload, op
         requestDetails.headers.Authorization = 'key=' + currentGCMAPIKey;
       }
     } else if (currentVapidDetails) {
-      const parsedUrl = url.parse(subscription.endpoint);
-      const audience = parsedUrl.protocol + '//'
-      + parsedUrl.host;
+      const url = new URL(subscription.endpoint);
+      const audience = url.protocol + '//' + url.hostname;
 
-      const vapidHeaders = vapidHelper.getVapidHeaders(
+      const vapidHeaders = await vapidHelper.getVapidHeaders(
         audience,
         currentVapidDetails.subject,
         currentVapidDetails.publicKey,
@@ -344,90 +332,57 @@ WebPushLib.prototype.generateRequestDetails = function(subscription, payload, op
  * resolves if the sending of the notification was successful, otherwise it
  * rejects.
  */
-WebPushLib.prototype.sendNotification = function(subscription, payload, options) {
-    let requestDetails;
-    try {
-      requestDetails = this.generateRequestDetails(subscription, payload, options);
-    } catch (err) {
-      return Promise.reject(err);
-    }
-    console.log("reqDetail", JSON.stringify(requestDetails, null, 2));
-    console.log("options", JSON.stringify(options, null, 2));
+WebPushLib.prototype.sendNotification = async function(subscription, payload, options) {
+    const requestDetails = await this.generateRequestDetails(subscription, payload, options);
+
+    //console.log("reqDetail", JSON.stringify(requestDetails, null, 2));
+    //console.log("options", JSON.stringify(options, null, 2));
     //if ("Deno" in window) Deno.exit(); else process.exit();
 
-    return new Promise(function(resolve, reject) {
-      const httpsOptions = {};
-      const urlParts = url.parse(requestDetails.endpoint);
-      httpsOptions.hostname = urlParts.hostname;
-      httpsOptions.port = urlParts.port;
-      httpsOptions.path = urlParts.path;
+    const httpsOptions = {};
 
-      httpsOptions.headers = requestDetails.headers;
-      httpsOptions.method = requestDetails.method;
+    httpsOptions.headers = requestDetails.headers;
+    const method = requestDetails.method;
 
-      if (requestDetails.timeout) {
-        httpsOptions.timeout = requestDetails.timeout;
-      }
+    if (requestDetails.timeout) {
+      httpsOptions.timeout = requestDetails.timeout;
+    }
 
-      if (requestDetails.agent) {
-        httpsOptions.agent = requestDetails.agent;
-      }
+    if (requestDetails.agent) {
+      httpsOptions.agent = requestDetails.agent;
+    }
 
-      if (requestDetails.proxy) {
-        /*
-        const { HttpsProxyAgent } = require('https-proxy-agent'); // eslint-disable-line global-require
-        httpsOptions.agent = new HttpsProxyAgent(requestDetails.proxy);
-        */
-        throw new Error("proxy is not supported yet");
-      }
+    if (requestDetails.proxy) {
+      /*
+      const { HttpsProxyAgent } = require('https-proxy-agent'); // eslint-disable-line global-require
+      httpsOptions.agent = new HttpsProxyAgent(requestDetails.proxy);
+      */
+      throw new Error("proxy is not supported yet");
+    }
 
-      //console.log(JSON.stringify(httpsOptions, null, 2));
-      httprequest(httpsOptions, toUint8Array(requestDetails.body)).then(r => console.log(r));
-      return;
-
-      const pushRequest = https.request(httpsOptions, function(pushResponse) {
-        let responseText = '';
-
-        pushResponse.on('data', function(chunk) {
-          responseText += chunk;
-        });
-
-        pushResponse.on('end', function() {
-          if (pushResponse.statusCode < 200 || pushResponse.statusCode > 299) {
-            console.log("ERR", responseText),
-            reject(new WebPushError(
-              'Received unexpected response code: ' + pushResponse.statusCode,
-              pushResponse.statusCode,
-              pushResponse.headers,
-              responseText,
-              requestDetails.endpoint
-            ));
-          } else {
-            resolve({
-              statusCode: pushResponse.statusCode,
-              body: responseText,
-              headers: pushResponse.headers
-            });
-          }
-        });
+    //console.log(JSON.stringify(httpsOptions, null, 2));
+    const url = requestDetails.endpoint;
+    const body = toUint8Array(requestDetails.body);
+    const res = await fetch(url, { method, headers: httpsOptions.headers, body });
+    if (res.statusCode < 200 || res.statusCode > 299) {
+      const txt = await res.text();
+      throw new WebPushError(
+        `Received unexpected response code: ${res.statusCode} (${txt})`,
+        res.statusCode,
+        res.headers,
+        txt,
+        requestDetails.endpoint
+      );
+    }
+    const txt = await res.text();
+    return txt;
+    /*
+    if (requestDetails.timeout) {
+      pushRequest.on('timeout', function() {
+        pushRequest.destroy(new Error('Socket timeout'));
       });
-
-      if (requestDetails.timeout) {
-        pushRequest.on('timeout', function() {
-          pushRequest.destroy(new Error('Socket timeout'));
-        });
-      }
-
-      pushRequest.on('error', function(e) {
-        reject(e);
-      });
-
-      if (requestDetails.body) {
-        pushRequest.write(requestDetails.body);
-      }
-
-      pushRequest.end();
-    });
+    }
+    */
   };
 
 export default WebPushLib;
