@@ -1,8 +1,8 @@
-<h1 align="center">web-push</h1>
+# web-push for Deno
 
-[![Build Status](https://github.com/web-push-libs/web-push/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/web-push-libs/web-push/actions/workflows/ci.yml)
+web-push library for Deno
 
-# Why
+## Why
 
 Web push requires that push messages triggered from a backend be done via the
 [Web Push Protocol](https://tools.ietf.org/html/draft-ietf-webpush-protocol)
@@ -12,19 +12,13 @@ that data according to the [Message Encryption for Web Push spec](https://tools.
 This module makes it easy to send messages and will also handle legacy support
 for browsers relying on GCM for message sending / delivery.
 
-# Install
-
-Installation is simple, just install via npm.
-
-    npm install web-push --save
-
-# Usage
+## Usage
 
 The common use case for this library is an application server using
 a GCM API key and VAPID keys.
 
 ```javascript
-const webpush = require('web-push');
+import webpush from "https://code4fukui.github.io/web-push/src/index.js";
 
 // VAPID keys should be generated only once.
 const vapidKeys = webpush.generateVAPIDKeys();
@@ -60,7 +54,7 @@ registration.pushManager.subscribe({
 });
 ```
 
-## Command Line
+## Command Line (not yet)
 
 You can install `web-push` globally and use it for sending notifications
 and / or generating VAPID keys.
