@@ -1,7 +1,8 @@
 import { Base64URL } from "https://js.sabae.cc/Base64URL.js";
 import { Base16 } from "https://code4fukui.github.io/Base16/Base16.js";
 //import elliptic from "npm:elliptic";
-import EC from "../../elliptic/lib/elliptic/ec/index.js";
+//import EC from "../../elliptic/lib/elliptic/ec/index.js";
+import EC from "https://code4fukui.github.io/elliptic/lib/elliptic/ec/index.js";
 import { Buffer } from "https://taisukef.github.io/buffer/Buffer.js";
 import crypto from "node:crypto";
 import formatEcdsa from "https://code4fukui.github.io/node-ecdsa-sig-formatter/src/ecdsa-sig-formatter.js";
