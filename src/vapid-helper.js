@@ -3,7 +3,7 @@
 //import asn1 from 'node:asn1';
 import * as asn1 from "https://code4fukui.github.io/ASN1/lib/asn1.js";
 //import jws from 'node:jws';
-//import * as JWS from "./JWS_prime256v1.js";
+import * as JWS2 from "./JWS_prime256v1.js";
 import * as JWS from "./JWS_crypto_ec.js";
 import { URL } from 'node:url';
 import { Buffer } from "https://taisukef.github.io/buffer/Buffer.js";
@@ -41,7 +41,7 @@ function toPEM(key) {
 }
 
 function generateVAPIDKeys() {
-  return jws.genKeys();
+  return JWS2.genKeys();
 };
 
 /*
