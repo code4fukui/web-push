@@ -101,7 +101,7 @@ Then you can run the following commands:
     --payload=Hello
   ```  
 
-# API Reference
+## API Reference
 
 ## sendNotification(pushSubscription, payload, options)
 
@@ -460,7 +460,7 @@ object will contain:
 
 <hr />
 
-# Browser Support
+## Browser Support
 
 <table>
 <thead>
@@ -570,7 +570,7 @@ object will contain:
 </tbody>
 </table>
 
-# Help
+## Help
 
 **MDN**
 
@@ -579,7 +579,7 @@ There's an example on [MDN](https://developer.mozilla.org/en-US/docs/Web/Progres
 Also, the [Service Worker Cookbook](https://github.com/mdn/serviceworker-cookbook) is full of Web Push
 examples using this library.
 
-# Running tests
+## Running tests
 
 > Prerequisites:
 >  * Java JDK or JRE (http://www.oracle.com/technetwork/java/javase/downloads/index.html)
