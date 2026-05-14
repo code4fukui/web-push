@@ -1,5 +1,7 @@
 # web-push for Deno
 
+> 日本語のREADMEはこちらです: [README.ja.md](README.ja.md)
+
 web-push library for Deno
 
 ## Why
